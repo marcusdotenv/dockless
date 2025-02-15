@@ -17,17 +17,14 @@ class FunctionMetadata(BaseModel):
     str_dependencies: str
 
     @staticmethod
-    def new(absolute_path: str , endpoint_inputs: str) -> FunctionMetadata:
+    def from_body(absolute_path: str , endpoint_inputs: str) -> FunctionMetadata:
         inputs = json.loads(endpoint_inputs)
         function_id = str(uuid.uuid4())[:8]
         folder_path = os.path.join(absolute_path, "functions", f"func-{function_id}")
 
         return FunctionMetadata(
             id=function_id,
-            lang=inputs["lang"],
-            version=inputs["version"],
-            name=inputs["name"],
-            dependencies=inputs["dependencies"],
+            **inputs,
             folder_path=folder_path,
             str_dependencies= " ".join(inputs["dependencies"])
         )
