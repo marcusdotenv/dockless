@@ -1,6 +1,6 @@
 # Dockless
 
-## Introduction
+## Overview
 
 Dockless (Docker + Serverless) is an experimental project aimed at locally implementing a simple system that manages serverless functions, inspired by how AWS Lambda works, all while utilizing Docker.
 
