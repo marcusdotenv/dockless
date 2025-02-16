@@ -15,18 +15,21 @@ class FunctionMetadata(BaseModel):
     dependencies: list[str]
     folder_path: str
     str_dependencies: str
+    tag: str
 
     @staticmethod
     def from_body(absolute_path: str , endpoint_inputs: str) -> FunctionMetadata:
         inputs = json.loads(endpoint_inputs)
         function_id = str(uuid.uuid4())[:8]
         folder_path = os.path.join(absolute_path, "functions", f"func-{function_id}")
+        tag = f"{inputs["name"]}-{function_id}"
 
         return FunctionMetadata(
             id=function_id,
             **inputs,
             folder_path=folder_path,
-            str_dependencies= " ".join(inputs["dependencies"])
+            str_dependencies= " ".join(inputs["dependencies"]),
+            tag=tag
         )
 
     @staticmethod

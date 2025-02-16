@@ -1,23 +1,23 @@
 import os
 from textwrap import dedent
 from contracts.upload_function_request import FunctionMetadata
-
+import requests
 
 class NginxConfHandler:
     def __init__(self):
         absolute_path = os.path.dirname(os.path.abspath(__file__)) 
+        self.__running_functions = {}
         self.__file_path = os.path.join(absolute_path, "../", "nginx.conf")
 
     def add(self, metadata: FunctionMetadata):
-        tag = f"{metadata.name}-{metadata.id}"
 
-        new_upstream = self.__format_upstream(tag)
-        new_location = self.__format_location(tag)
+        new_upstream = self.__format_upstream(metadata.tag)
+        new_location = self.__format_location(metadata.tag)
 
         with open(self.__file_path, "r+") as f:
             lines = f.readlines()
 
-            if self.__block_exists(lines, f"upstream {tag} {{") or self.__block_exists(lines, f"location /{tag}/ {{"):
+            if self.__block_exists(lines, f"upstream {metadata.tag} {{") or self.__block_exists(lines, f"location /{metadata.tag}/ {{"):
                 # already exists
                 return
 
@@ -28,6 +28,8 @@ class NginxConfHandler:
             lines.insert(server_end_index, new_location)
 
             self.__write_lines(f, lines)
+        
+        self.__running_functions[metadata.id] = metadata.tag
 
     def remove(self, metadata: FunctionMetadata):
         tag = f"{metadata.name}-{metadata.id}"
@@ -44,6 +46,14 @@ class NginxConfHandler:
 
             self.__delete_ranges(lines, [upstream_range, location_range])
             self.__write_lines(f, lines)
+
+    def request(self, function_id: str):
+        path = self.__running_functions.get(function_id, None)
+
+        if path is None:
+            raise Exception("Function is not running now")
+        
+        return requests.post(f"http://nginx-proxy:80/{path}/execute").json()
 
     def __format_upstream(self, tag: str):
         return dedent(f"""

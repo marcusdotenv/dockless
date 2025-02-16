@@ -4,10 +4,10 @@ from contracts.upload_function_request import FunctionMetadata
 from utils.nginx_conf_handler import NginxConfHandler
 
 class DockerContainerProvider:
-    def __init__(self):
+    def __init__(self, nginx_conf_handler: NginxConfHandler):
         self.__client = docker.from_env()
         self.__network_name = "dockless_dockless-network"
-        self.__nginx_handler = NginxConfHandler()
+        self.__nginx_handler = nginx_conf_handler
     
     def __build_img(self, metadata: FunctionMetadata):
         args = {
