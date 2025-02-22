@@ -46,9 +46,6 @@ def execute_function(function_id: str):
 
     container_manager.registry_request(function_id=function_id)
     return nginx_handler.request(path=metadata.tag)
-
-@app.post("/functions/{function_id}/revoke")
-def revoke_function(function_id: str):
     container_manager.to_paused(function_id)
     metadata = container_manager.get_data(function_id)
     on_expire_container(metadata)
