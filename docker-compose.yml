@@ -14,9 +14,9 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./api:/app # enable development with hot reload 
-      - /var/run/docker.sock:/var/run/docker.sock # enable container to use docker on host machine
-      - ./nginx.conf:/app/nginx.conf # enable 
+      - ./api:/app 
+      - /var/run/docker.sock:/var/run/docker.sock 
+      - ./nginx.conf:/app/nginx.conf 
     networks:
       - dockless-network  
     depends_on:

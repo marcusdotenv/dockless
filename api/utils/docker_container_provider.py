@@ -57,3 +57,6 @@ class DockerContainerProvider:
     
     def get_container(self, container_name: str):
         return self.client.containers.get(container_name)
+
+    def reload_nginx_container_conf(self):
+        self.client.containers.get("nginx-proxy").exec_run("nginx -s reload")

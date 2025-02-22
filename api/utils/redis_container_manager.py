@@ -7,7 +7,7 @@ from contracts.upload_function_request import FunctionMetadata
 class RedisContainerManager:
     def __init__(self, on_container_expire: callable):
         self.__client = redis.Redis(host='redis', port=6379, decode_responses=True)
-        self.__client.config_set("notify-keyspace-events", "Ex")
+        self.__client.config_set("notify-keyspace-events", "KEA")
         self.__on_expire = on_container_expire
         self.__client_pubsub = self.__client.pubsub()
         self.__client_pubsub.psubscribe(**{'__keyevent@0__:expired': self.handle_expirations})
@@ -53,7 +53,7 @@ class RedisContainerManager:
 
         key_trigger = self.__build_key_trigger(function_id=function_id)
 
-        self.__client.set(name=key_trigger, value="triggered")
+        self.__client.set(name=key_trigger, value="triggered", ex=30)
     
     def is_idle(self, function_id: str):
         key = self.__build_key_status(function_id)
