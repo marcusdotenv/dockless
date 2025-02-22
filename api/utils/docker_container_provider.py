@@ -1,13 +1,12 @@
 import docker
 
 from contracts.upload_function_request import FunctionMetadata
-from utils.nginx_conf_handler import NginxConfHandler
-
+import time 
+import threading
 class DockerContainerProvider:
-    def __init__(self, nginx_conf_handler: NginxConfHandler):
+    def __init__(self):
         self.__client = docker.from_env()
         self.__network_name = "dockless_dockless-network"
-        self.__nginx_handler = nginx_conf_handler
     
     def __build_img(self, metadata: FunctionMetadata):
         args = {
@@ -21,17 +20,31 @@ class DockerContainerProvider:
             tag=metadata.name
         )
     
-    def __run(self, metadata: FunctionMetadata):
-        tag = f"{metadata.name}-{metadata.id}"
-        self.__client.containers.run(metadata.name, detach=True, network=self.__network_name, name=tag) 
+    def __run_container_in_thread(self, metadata: FunctionMetadata):
+        def run_container():
+            container = self.__client.containers.run(
+                metadata.name, detach=True, network=self.__network_name, name=metadata.tag
+            ) 
 
-    def build_and_run(self, metadata: FunctionMetadata):
+            while True:
+                container.reload()
+                is_container_healthy = container.attrs["State"].get("Health", {}).get("Status") == "healthy"
+                if container.status == "running" and is_container_healthy:
+                    break
+                time.sleep(2)
+
+        thread = threading.Thread(target=run_container)
+        thread.start()
+
+
+    def build(self, metadata: FunctionMetadata):
         self.__build_img(metadata=metadata)
-        self.__run(metadata=metadata)
-        self.__registry_on_nginx(metadata=metadata)
+    
+    def run(self, metadata: FunctionMetadata):
+        self.__run_container_in_thread(metadata=metadata)  
 
-    def __registry_on_nginx(self, metadata: FunctionMetadata):
-        self.__nginx_handler.add(metadata=metadata)
+    def pause(self, metadata: FunctionMetadata):
+        self.__client.containers.get(metadata.tag).pause()
 
-        nginx = self.__client.containers.get("nginx-proxy")
-        nginx.exec_run("nginx -s reload")
+    def get_container(self, container_name: str):
+        return self.__client.containers.get(container_name)
