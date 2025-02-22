@@ -5,3 +5,4 @@ class ContainerStatus(Enum):
     RUNNING="running"
     IDLE="idle"
     IN_BUILD="building"
+    PAUSED="paused"

@@ -12,8 +12,16 @@ app = FastAPI()
 absolute_path = os.path.dirname(os.path.abspath(__file__)) 
 nginx_handler = NginxConfHandler()
 docker = DockerContainerProvider()
-container_manager = RedisContainerManager(on_container_expire=docker.pause)
-running_servers = {}
+
+
+def __on_expire_container(metadata: FunctionMetadata):
+    nginx_handler.remove(metadata=metadata)
+    nginx_container = docker.get_container("nginx-proxy")
+    nginx_container.exec_run("nginx -s reload")
+    docker.pause(metadata=metadata)
+
+container_manager = RedisContainerManager(on_container_expire=__on_expire_container)
+
 
 @app.post("/functions")
 async def new_function(file: UploadFile, backgrounTask: BackgroundTasks, body: str = Form(...)):
@@ -35,24 +43,45 @@ def execute(function_id: str):
 
     is_running = container_manager.is_running(function_id=function_id)
 
-
-    if not is_running: 
-        __handle_not_running_container(function_id=function_id)
+    if not is_running:
+        is_idle = container_manager.is_idle(function_id=function_id)
+        if is_idle:
+            __handle_idle_container(function_id=function_id)
+        else:
+            __handle_paused_container(function_id=function_id)
 
     metadata = container_manager.get_data(function_id=function_id)
 
-    #container_manager.registry_request(function_id=function_id)
+
     return nginx_handler.request(path=metadata.tag)
+
+
+@app.post("/functions/{function_id}/revoke")
+def execute(function_id: str):
+
+    container_manager.to_paused(function_id=function_id)
+    data = container_manager.get_data(function_id)
+
+    __on_expire_container(data)
+
 
 def __monitore_building(metadata: FunctionMetadata):
     container_manager.save(metadata=metadata)
     docker.build(metadata=metadata)
     container_manager.to_idle(function_id=metadata.id)
 
-def __handle_not_running_container(function_id: str):
-    metadata = FunctionMetadata.from_files(absolute_path=absolute_path, function_id=function_id)
+def __handle_idle_container(function_id: str):
+    metadata = container_manager.get_data(function_id=function_id)
     container_manager.to_running(function_id=function_id)
     docker.run(metadata=metadata)
     nginx_handler.add(metadata=metadata)
     nginx_container = docker.get_container("nginx-proxy")
     nginx_container.exec_run("nginx -s reload")
+
+def __handle_paused_container(function_id: str):
+    metadata = container_manager.get_data(function_id=function_id)
+    docker.start(metadata=metadata)
+    nginx_handler.add(metadata=metadata)
+    nginx_container = docker.get_container("nginx-proxy")
+    nginx_container.exec_run("nginx -s reload")
+    container_manager.to_running(function_id=function_id)
