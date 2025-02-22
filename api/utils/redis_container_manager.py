@@ -1,5 +1,7 @@
-import redis 
+import redis
 import json
+import time
+import threading
 
 from utils.container_status import ContainerStatus
 from contracts.upload_function_request import FunctionMetadata
@@ -7,11 +9,11 @@ from contracts.upload_function_request import FunctionMetadata
 class RedisContainerManager:
     def __init__(self, on_container_expire: callable):
         self.__client = redis.Redis(host='redis', port=6379, decode_responses=True)
-        self.__client.config_set("notify-keyspace-events", "KEA")
+        self.__client.config_set("notify-keyspace-events", "KEA")  # Deixe isso no Redis se necessário.
         self.__on_expire = on_container_expire
         self.__client_pubsub = self.__client.pubsub()
         self.__client_pubsub.psubscribe(**{'__keyevent@0__:expired': self.handle_expirations})
-        self.__client_pubsub.run_in_thread(sleep_time=0.01)
+        threading.Thread(target=self.start_listening, daemon=True).start()
 
     def __build_key_status(self, function_id: str):
         return f"function:{function_id}:status"
@@ -39,12 +41,10 @@ class RedisContainerManager:
 
     def in_building(self, function_id: str):
         key = self.__build_key_status(function_id)
-
         return self.__client.get(key) == ContainerStatus.IN_BUILD.name
 
     def is_running(self, function_id: str):
         key = self.__build_key_status(function_id)
-
         return self.__client.get(key) == ContainerStatus.RUNNING.name
     
     def to_running(self, function_id: str):
@@ -52,12 +52,10 @@ class RedisContainerManager:
         self.__client.set(name=key, value=ContainerStatus.RUNNING.name)
 
         key_trigger = self.__build_key_trigger(function_id=function_id)
-
-        self.__client.set(name=key_trigger, value="triggered", ex=30)
+        self.__client.set(name=key_trigger, value="triggered", ex=120)
     
     def is_idle(self, function_id: str):
         key = self.__build_key_status(function_id)
-
         return self.__client.get(key) == ContainerStatus.IDLE.name
     
     def get_data(self, function_id: str) -> FunctionMetadata:
@@ -67,7 +65,7 @@ class RedisContainerManager:
 
     def registry_request(self, function_id: str):
         key_trigger = self.__build_key_trigger(function_id=function_id)
-        self.__client.set(name=key_trigger, value="trigger", ex=60)
+        self.__client.set(name=key_trigger, value="trigger", ex=120)
 
     def handle_expirations(self, message):
         print("RECEIVED MESSAGE ", message)
@@ -86,5 +84,13 @@ class RedisContainerManager:
         data = self.get_data(idle_container_id)
         print("EXECUTING ON EXPIRE", idle_container_id)
         self.__on_expire(data)
-        
-    
+
+    def start_listening(self):
+        print("Iniciando escuta dos eventos de expiração...")
+
+        while True:
+            message = self.__client_pubsub.get_message()
+            if message:
+                self.handle_expirations(message)
+            
+            time.sleep(0.01)

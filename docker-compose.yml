@@ -23,7 +23,7 @@ services:
       - nginx
       - redis
   redis:
-    image: redis:latest
+    image: redis:7.2.7
     container_name: redis_container
     restart: always
     ports:

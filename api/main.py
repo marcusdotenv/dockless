@@ -43,6 +43,8 @@ def execute_function(function_id: str):
             __handle_paused(function_id)
     
     metadata = container_manager.get_data(function_id)
+
+    container_manager.registry_request(function_id=function_id)
     return nginx_handler.request(path=metadata.tag)
 
 @app.post("/functions/{function_id}/revoke")
@@ -58,9 +60,9 @@ def __handle_build(metadata: FunctionMetadata):
 
 def __handle_idle(function_id: str):
     metadata = container_manager.get_data(function_id)
-    container_manager.to_running(function_id)
     docker.run(metadata)
     __update_nginx_config(metadata)
+    container_manager.to_running(function_id)
 
 def __handle_paused(function_id: str):
     metadata = container_manager.get_data(function_id)
