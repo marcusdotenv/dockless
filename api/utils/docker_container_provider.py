@@ -1,7 +1,7 @@
 import docker
 import time
 import threading
-from api.config import NGINX_CONTAINER_NAME
+from config import NGINX_CONTAINER_NAME
 from contracts.upload_function_request import FunctionMetadata
 
 class DockerContainerProvider:
@@ -12,7 +12,7 @@ class DockerContainerProvider:
     def _build_image(self, metadata: FunctionMetadata):
         build_args = {
             "FUNCTION_DEPENDENCIES": metadata.str_dependencies,
-            "PY_VERSION": metadata.version
+            "LANG_VERSION": metadata.version
         }
         
         self.client.images.build(

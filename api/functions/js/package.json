@@ -1,0 +1,15 @@
+{
+    "name": "js-function",
+    "version": "1.0.0",
+    "description": "Express application to execute dockless functions",
+    "main": "index.js",
+    "scripts": {
+      "start": "node index.js"
+    },
+    "author": "Dockless",
+    "license": "MIT",
+    "dependencies": {
+      "express": "^4.18.2"
+    }
+  }
+  

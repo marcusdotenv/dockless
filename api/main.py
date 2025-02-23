@@ -26,7 +26,7 @@ async def new_function(file: UploadFile, background_task: BackgroundTasks, body:
     data = FunctionMetadata.from_body(absolute_path=absolute_path, endpoint_inputs=body)
     
     await __save_function_files(data, file)
-    __copy_base_management_files(absolute_path, data.folder_path)
+    __copy_base_management_files(absolute_path, data)
     
     background_task.add_task(__handle_build, data)
     return {"function": data}

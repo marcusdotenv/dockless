@@ -22,12 +22,12 @@ async def __save_function_files(data: FunctionMetadata, file: UploadFile):
         f.write(data.model_dump_json(indent=4))
 
 
-def __copy_base_management_files(absolute_path: str, destine_path: str):
-    from_path = os.path.join(absolute_path, "functions", "base")
+def __copy_base_management_files(absolute_path: str, data: FunctionMetadata):
+    from_path = os.path.join(absolute_path, "functions", data.lang.value)
 
     for file in os.listdir(from_path):
         origin = os.path.join(from_path, file)
-        destine = os.path.join(destine_path, file)
+        destine = os.path.join(data.folder_path, file)
 
         if os.path.isfile(origin):
             shutil.copy(origin, destine)
