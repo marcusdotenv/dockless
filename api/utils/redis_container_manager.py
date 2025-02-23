@@ -7,7 +7,6 @@ from contracts.upload_function_request import FunctionMetadata
 
 class RedisContainerManager:
     def __init__(self, on_container_expire: callable):
-        print(REDIS_HOST)
         self.__client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
         self.__client.config_set("notify-keyspace-events", "KEA")
         self.__on_expire = on_container_expire

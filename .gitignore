@@ -1,5 +1,5 @@
 /env
 __pycache__
-example/
 api/functions/func-*
 nginx.conf
+.env
