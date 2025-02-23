@@ -1,6 +1,5 @@
 import os
 import shutil
-import json
 
 from fastapi import UploadFile
 
@@ -32,6 +31,3 @@ def __copy_base_management_files(absolute_path: str, destine_path: str):
 
         if os.path.isfile(origin):
             shutil.copy(origin, destine)
-
-def __build_function_dependencies(dependencies: list[str]) -> str:
-    return " ".join(dependencies)

@@ -1,9 +1,9 @@
 import os
 from textwrap import dedent
-from utils.redis_container_manager import RedisContainerManager
+from config import NGINX_CONTAINER_NAME
 from contracts.upload_function_request import FunctionMetadata
 import requests
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, wait_fixed
+from tenacity import retry, stop_after_attempt, retry_if_exception_type, wait_fixed
 
 
 class NginxConfHandler:
@@ -65,8 +65,8 @@ http {
         wait=wait_fixed(3), 
         retry=retry_if_exception_type(requests.RequestException), 
     )
-    def request(self, path: str):
-        response = requests.post(f"http://nginx-proxy:80/{path}/execute")
+    def request(self, path: str, data: dict):
+        response = requests.post(f"http://{NGINX_CONTAINER_NAME}:80/{path}/execute", json=data)
         response.raise_for_status() 
         return response.json()
 

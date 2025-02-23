@@ -8,6 +8,7 @@ from contracts.upload_function_request import FunctionMetadata
 from utils.docker_container_provider import DockerContainerProvider
 from utils.file_management import __copy_base_management_files, __save_function_files
 
+
 app = FastAPI()
 absolute_path = os.path.dirname(os.path.abspath(__file__))
 nginx_handler = NginxConfHandler()
@@ -31,7 +32,7 @@ async def new_function(file: UploadFile, background_task: BackgroundTasks, body:
     return {"function": data}
 
 @app.post("/functions/{function_id}/execute")
-def execute_function(function_id: str):
+def execute_function(function_id: str, body: dict):
     if container_manager.in_building(function_id):
         return Response(status_code=403, content=json.dumps({"error": "Container in build"}))
     
@@ -45,7 +46,7 @@ def execute_function(function_id: str):
     metadata = container_manager.get_data(function_id)
 
     container_manager.registry_request(function_id=function_id)
-    return nginx_handler.request(path=metadata.tag)
+    return nginx_handler.request(path=metadata.tag, data=body)
     container_manager.to_paused(function_id)
     metadata = container_manager.get_data(function_id)
     on_expire_container(metadata)

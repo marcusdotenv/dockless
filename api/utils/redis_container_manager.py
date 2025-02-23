@@ -1,12 +1,14 @@
 import redis
 import json
 
+from config import REDIS_HOST, REDIS_PORT, TIME_PAUSE_IDLE_CONTAINERS_IN_SECONDS
 from utils.container_status import ContainerStatus
 from contracts.upload_function_request import FunctionMetadata
 
 class RedisContainerManager:
     def __init__(self, on_container_expire: callable):
-        self.__client = redis.Redis(host='redis', port=6379, decode_responses=True)
+        print(REDIS_HOST)
+        self.__client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
         self.__client.config_set("notify-keyspace-events", "KEA")
         self.__on_expire = on_container_expire
         self.__client_pubsub = self.__client.pubsub()
@@ -50,7 +52,7 @@ class RedisContainerManager:
         self.__client.set(name=key, value=ContainerStatus.RUNNING.name)
 
         key_trigger = self.__build_key_trigger(function_id=function_id)
-        self.__client.set(name=key_trigger, value="triggered", ex=120)
+        self.__client.set(name=key_trigger, value="triggered", ex=TIME_PAUSE_IDLE_CONTAINERS_IN_SECONDS)
     
     def is_idle(self, function_id: str):
         key = self.__build_key_status(function_id)
@@ -63,7 +65,7 @@ class RedisContainerManager:
 
     def registry_request(self, function_id: str):
         key_trigger = self.__build_key_trigger(function_id=function_id)
-        self.__client.set(name=key_trigger, value="trigger", ex=120)
+        self.__client.set(name=key_trigger, value="trigger", ex=TIME_PAUSE_IDLE_CONTAINERS_IN_SECONDS)
 
     def handle_expirations(self, message):
         print("RECEIVED MESSAGE ", message)

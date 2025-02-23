@@ -8,7 +8,10 @@ def health_check():
     return {"up": True}
 
 @app.post("/execute")
-async def execute():
+async def execute(body: dict):
     print("Starting executing function...")
-    handle()
+    result = handle(**body)
     print("Finishing executing function...")
+
+    return result
+    

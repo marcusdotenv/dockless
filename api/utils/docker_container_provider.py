@@ -1,6 +1,7 @@
 import docker
 import time
 import threading
+from api.config import NGINX_CONTAINER_NAME
 from contracts.upload_function_request import FunctionMetadata
 
 class DockerContainerProvider:
@@ -59,4 +60,4 @@ class DockerContainerProvider:
         return self.client.containers.get(container_name)
 
     def reload_nginx_container_conf(self):
-        self.client.containers.get("nginx-proxy").exec_run("nginx -s reload")
+        self.client.containers.get(NGINX_CONTAINER_NAME).exec_run("nginx -s reload")
