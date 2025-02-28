@@ -47,9 +47,6 @@ def execute_function(function_id: str, body: dict):
 
     container_manager.registry_request(function_id=function_id)
     return nginx_handler.request(path=metadata.tag, data=body)
-    container_manager.to_paused(function_id)
-    metadata = container_manager.get_data(function_id)
-    on_expire_container(metadata)
 
 def __handle_build(metadata: FunctionMetadata):
     container_manager.save(metadata)
